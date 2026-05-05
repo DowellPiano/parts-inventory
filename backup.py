@@ -1,20 +1,22 @@
-"""Database backup via pg_dump, emailed as attachment."""
+"""Database backup via sqlite3 dump, emailed as attachment."""
 import os
 import smtplib
-import subprocess
+import sqlite3
 from datetime import datetime
 from email.message import EmailMessage
 
 
 def create_backup(database_url):
-    """Run pg_dump and return the SQL bytes."""
-    result = subprocess.run(
-        ['pg_dump', database_url, '--no-owner', '--no-acl'],
-        capture_output=True, timeout=120
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f"pg_dump failed: {result.stderr.decode()}")
-    return result.stdout
+    """Dump the SQLite database and return the SQL bytes."""
+    db_path = database_url.replace('sqlite:///', '')
+    if not os.path.isabs(db_path):
+        db_path = os.path.join(os.path.dirname(__file__), db_path)
+
+    lines = []
+    with sqlite3.connect(db_path) as con:
+        for line in con.iterdump():
+            lines.append(line)
+    return '\n'.join(lines).encode('utf-8')
 
 
 def send_backup_email(sql_bytes):
