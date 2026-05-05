@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Optimize Layout — Parts Inventory{% endblock %}
+{% block content %}
+<h1>Layout Optimization</h1>
+<p>Suggestions based on usage frequency vs. bin accessibility. High-use parts should be in easy-to-reach bins; rarely-used parts can go higher or further back.</p>
+
+{% if not suggestions %}
+<article>
+    <p>No optimization suggestions right now. As usage data accumulates, suggestions will appear here.</p>
+</article>
+{% else %}
+<p><strong>{{ suggestions | length }}</strong> suggested moves:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Part</th>
+            <th>Uses</th>
+            <th>Current Bin</th>
+            <th>Access</th>
+            <th>Suggested Move</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in suggestions %}
+        <tr>
+            <td>
+                <a href="{{ url_for('part_detail', id=s.part.id) }}">{{ s.part.name }}</a>
+            </td>
+            <td>{{ s.usage }}x</td>
+            <td>{{ s.current_bin.name }}</td>
+            <td>{{ s.current_bin.accessibility }}/10</td>
+            <td>
+                <form method="post" action="{{ url_for('optimize_move') }}" style="display:inline;">
+                    <input type="hidden" name="part_id" value="{{ s.part.id }}">
+                    <select name="new_bin_id">
+                        {% for bin in s.suggested_bins %}
+                        <option value="{{ bin.id }}">{{ bin.name }} ({{ bin.accessibility }}/10)</option>
+                        {% endfor %}
+                    </select>
+            </td>
+            <td>
+                    <button type="submit" class="outline" style="padding:0.25rem 0.5rem; font-size:0.85rem;">Move</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

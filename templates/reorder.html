@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Reorder — Parts Inventory{% endblock %}
+{% block content %}
+<hgroup>
+    <h1>Reorder List</h1>
+    <p>{{ total }} parts at or below minimum threshold</p>
+</hgroup>
+
+{% if not by_category %}
+<p>All parts are stocked above their reorder thresholds.</p>
+{% endif %}
+
+{% for category, parts in by_category.items() %}
+<h2>{{ category }}</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Part #</th>
+            <th>Name</th>
+            <th>In Stock</th>
+            <th>Min</th>
+            <th>Need</th>
+            <th>Cost Each</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for part in parts %}
+        <tr>
+            <td><a href="{{ url_for('part_detail', id=part.id) }}">{{ part.part_number }}</a></td>
+            <td>{{ part.name }}</td>
+            <td class="low-stock">{{ part.quantity }}</td>
+            <td>{{ part.min_threshold }}</td>
+            <td>{{ part.min_threshold - part.quantity + 1 }}</td>
+            <td>{{ '$%.2f' | format(part.cost) if part.cost else '—' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endfor %}
+{% endblock %}

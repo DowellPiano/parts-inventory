@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if part else 'New' }} Part — Inventory{% endblock %}
+{% block content %}
+<h1>{{ 'Edit' if part else 'Add New' }} Part</h1>
+
+<form method="post" enctype="multipart/form-data">
+    <label>
+        Name *
+        <input type="text" name="name" id="part-name" value="{{ part.name if part else request.args.get('name', '') }}" required>
+    </label>
+    <div id="duplicates" style="display:none; background:#fff3cd; padding:0.75rem; border-radius:4px; margin-bottom:1rem;">
+        <strong>Similar parts found:</strong>
+        <ul id="duplicate-list"></ul>
+    </div>
+
+    <label>
+        Category
+        <input type="text" name="category" value="{{ part.category if part else '' }}"
+               placeholder="e.g. strings, hammers, felts, hardware">
+    </label>
+
+    <label>
+        Description
+        <textarea name="description">{{ part.description if part else '' }}</textarea>
+    </label>
+
+    <div class="grid">
+        <label>
+            Quantity
+            <input type="number" name="quantity" value="{{ part.quantity if part else 0 }}" min="0">
+        </label>
+        <label>
+            Reorder Threshold
+            <input type="number" name="min_threshold" value="{{ part.min_threshold if part else 0 }}" min="0">
+        </label>
+        <label>
+            Cost ($)
+            <input type="number" name="cost" value="{{ part.cost if part and part.cost else '' }}" step="0.01" min="0">
+        </label>
+    </div>
+
+    <label>
+        Location (Bin)
+        <select name="location_id">
+            <option value="">— No bin assigned —</option>
+            {% for bin in bins %}
+            <option value="{{ bin.id }}"
+                    {% if part and part.location_id == bin.id %}selected{% endif %}>
+                {{ bin.name }} ({{ bin.full_label }})
+            </option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <label>
+        Photo
+        <input type="file" name="photo" accept="image/*">
+    </label>
+    {% if part and part.photo_filename %}
+    <small>Current photo: {{ part.photo_filename }}</small>
+    {% endif %}
+
+    <button type="submit">{{ 'Update' if part else 'Add Part' }}</button>
+</form>
+
+<script>
+let timeout;
+const nameInput = document.getElementById('part-name');
+const dupBox = document.getElementById('duplicates');
+const dupList = document.getElementById('duplicate-list');
+
+nameInput.addEventListener('input', function() {
+    clearTimeout(timeout);
+    const val = this.value.trim();
+    if (val.length < 3) { dupBox.style.display = 'none'; return; }
+    timeout = setTimeout(() => {
+        fetch('/api/check-duplicates?name=' + encodeURIComponent(val))
+            .then(r => r.json())
+            .then(matches => {
+                if (matches.length === 0) { dupBox.style.display = 'none'; return; }
+                dupList.innerHTML = matches.map(m =>
+                    `<li><a href="/parts/${m.id}">${m.name}</a> (${m.part_number}) — ${m.similarity}% match</li>`
+                ).join('');
+                dupBox.style.display = 'block';
+            });
+    }, 400);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Parts Inventory{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+
+<div class="grid">
+    <article>
+        <header>Total Parts</header>
+        <p style="font-size: 2rem; font-weight: bold;">{{ total_parts }}</p>
+    </article>
+    <article>
+        <header>Low Stock Alerts</header>
+        <p style="font-size: 2rem; font-weight: bold;">{{ low_stock | length }}</p>
+    </article>
+</div>
+
+{% if low_stock %}
+<h2>Needs Reorder</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Part #</th>
+            <th>Name</th>
+            <th>Qty</th>
+            <th>Min</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for part in low_stock %}
+        <tr>
+            <td><a href="{{ url_for('part_detail', id=part.id) }}">{{ part.part_number }}</a></td>
+            <td>{{ part.name }}</td>
+            <td>{{ part.quantity }}</td>
+            <td>{{ part.min_threshold }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% if recent_logs %}
+<h2>Recent Activity</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Part</th>
+            <th>Change</th>
+            <th>Note</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in recent_logs %}
+        <tr>
+            <td>{{ log.created_at.strftime('%m/%d %H:%M') }}</td>
+            <td><a href="{{ url_for('part_detail', id=log.part_id) }}">{{ log.part.name }}</a></td>
+            <td>{{ '%+d' | format(log.change) }}</td>
+            <td>{{ log.note }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

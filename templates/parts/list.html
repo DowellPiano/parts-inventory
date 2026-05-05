@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Parts — Inventory{% endblock %}
+{% block content %}
+<hgroup>
+    <h1>Parts</h1>
+    <p>{{ parts | length }} parts found</p>
+</hgroup>
+
+<div class="grid">
+    <form method="get" role="search">
+        <input type="search" name="q" value="{{ query }}" placeholder="Search by name or part #...">
+        <input type="submit" value="Search">
+    </form>
+    <div>
+        <a href="{{ url_for('part_new') }}" role="button">+ Add Part</a>
+        {% if view == 'list' %}
+        <a href="{{ url_for('parts_list', q=query, category=category, view='gallery') }}">Gallery View</a>
+        {% else %}
+        <a href="{{ url_for('parts_list', q=query, category=category, view='list') }}">List View</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if categories %}
+<details>
+    <summary>Filter by category</summary>
+    <nav>
+        <a href="{{ url_for('parts_list', q=query) }}">All</a>
+        {% for cat in categories %}
+        <a href="{{ url_for('parts_list', q=query, category=cat) }}"
+           {% if category == cat %}aria-current="page"{% endif %}>{{ cat }}</a>
+        {% endfor %}
+    </nav>
+</details>
+{% endif %}
+
+{% if view == 'gallery' %}
+<div class="gallery">
+    {% for part in parts %}
+    <a href="{{ url_for('part_detail', id=part.id) }}" class="gallery-item">
+        {% if part.photo_filename %}
+        <img src="{{ url_for('static', filename='uploads/' + part.photo_filename) }}" alt="{{ part.name }}">
+        {% else %}
+        <div class="placeholder-photo">No photo</div>
+        {% endif %}
+        <div class="info">
+            <h4>{{ part.name }}</h4>
+            <small>{{ part.part_number }}</small><br>
+            <small {% if part.is_low_stock %}class="low-stock"{% endif %}>Qty: {{ part.quantity }}</small>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<table>
+    <thead>
+        <tr>
+            <th>Part #</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Location</th>
+            <th>Qty</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for part in parts %}
+        <tr>
+            <td><a href="{{ url_for('part_detail', id=part.id) }}">{{ part.part_number }}</a></td>
+            <td>{{ part.name }}</td>
+            <td>{{ part.category or '—' }}</td>
+            <td>{{ part.location.name if part.location else '—' }}</td>
+            <td {% if part.is_low_stock %}class="low-stock"{% endif %}>{{ part.quantity }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

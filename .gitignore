@@ -1,0 +1,8 @@
+.aider*
+__pycache__/
+*.pyc
+instance/
+.DS_Store
+.obsidian/
+static/uploads/*
+!static/uploads/.gitkeep

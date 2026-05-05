@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if bin else 'New' }} Bin — Inventory{% endblock %}
+{% block content %}
+<h1>{{ 'Edit' if bin else 'Add New' }} Bin</h1>
+
+<form method="post">
+    <label>
+        Name *
+        <input type="text" name="name" value="{{ bin.name if bin else '' }}" required
+               placeholder="e.g. Bin A3, Drawer 2">
+    </label>
+
+    <div class="grid">
+        <label>
+            Shelf
+            <input type="text" name="shelf" value="{{ bin.shelf if bin else '' }}" placeholder="e.g. A, B, Top">
+        </label>
+        <label>
+            Row
+            <input type="text" name="row" value="{{ bin.row if bin else '' }}" placeholder="e.g. 1, 2, 3">
+        </label>
+        <label>
+            Position
+            <input type="text" name="position" value="{{ bin.position if bin else '' }}" placeholder="e.g. Left, Center">
+        </label>
+    </div>
+
+    <label>
+        Accessibility (1 = hard to reach, 10 = easy)
+        <input type="range" name="accessibility" min="1" max="10"
+               value="{{ bin.accessibility if bin else 5 }}">
+    </label>
+
+    <button type="submit">{{ 'Update' if bin else 'Create Bin' }}</button>
+</form>
+{% endblock %}
