@@ -12,6 +12,12 @@
         <header>Low Stock Alerts</header>
         <p style="font-size: 2rem; font-weight: bold;">{{ low_stock | length }}</p>
     </article>
+    <article>
+        <header>Database Backup</header>
+        <form method="post" action="{{ url_for('backup') }}" onsubmit="return confirm('Send a backup to your email?')">
+            <button type="submit" class="outline" style="margin-top:0.5rem;">Email Backup</button>
+        </form>
+    </article>
 </div>
 
 {% if low_stock %}

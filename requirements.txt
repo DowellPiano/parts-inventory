@@ -5,3 +5,5 @@ Pillow==10.2.0
 qrcode==7.4.2
 pytesseract==0.3.10
 psycopg2-binary==2.9.9
+supabase==2.11.0
+gunicorn==21.2.0

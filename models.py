@@ -11,6 +11,7 @@ class Part(db.Model):
     description = db.Column(db.Text)
     category = db.Column(db.String(100))
     photo_filename = db.Column(db.String(255))
+    photo_url = db.Column(db.String(500))
     quantity = db.Column(db.Integer, default=0)
     min_threshold = db.Column(db.Integer, default=0)
     cost = db.Column(db.Float)

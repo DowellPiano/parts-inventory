@@ -8,7 +8,9 @@
 
 <div class="grid">
     <div>
-        {% if part.photo_filename %}
+        {% if part.photo_url %}
+        <img src="{{ part.photo_url }}" alt="{{ part.name }}" class="part-photo">
+        {% elif part.photo_filename %}
         <img src="{{ url_for('static', filename='uploads/' + part.photo_filename) }}"
              alt="{{ part.name }}" class="part-photo">
         {% else %}

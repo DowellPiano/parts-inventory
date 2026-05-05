@@ -11,9 +11,11 @@ from models import db, Part, Bin, StockLog
 import qrcode
 import pytesseract
 from PIL import Image
+from storage import process_image, upload_photo, delete_photo, save_photo_local
+from backup import create_backup, send_backup_email
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'dev-secret-change-in-production'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-in-production')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
     'DATABASE_URL', 'postgresql://localhost/parts_inventory'
 )
@@ -86,12 +88,15 @@ def part_new():
         part_number = generate_part_number(name, category)
 
         photo_filename = None
+        photo_url = None
         if 'photo' in request.files:
             file = request.files['photo']
             if file and file.filename and allowed_file(file.filename):
-                ext = file.filename.rsplit('.', 1)[1].lower()
-                photo_filename = f"{part_number}.{ext}"
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename))
+                photo_filename = f"{part_number}.webp"
+                photo_bytes = process_image(file.stream)
+                photo_url = upload_photo(photo_bytes, photo_filename)
+                if not photo_url:
+                    save_photo_local(photo_bytes, photo_filename, app.config['UPLOAD_FOLDER'])
 
         part = Part(
             part_number=part_number,
@@ -99,6 +104,7 @@ def part_new():
             description=request.form.get('description', ''),
             category=category,
             photo_filename=photo_filename,
+            photo_url=photo_url,
             quantity=int(request.form.get('quantity', 0)),
             min_threshold=int(request.form.get('min_threshold', 0)),
             cost=float(request.form['cost']) if request.form.get('cost') else None,
@@ -135,9 +141,13 @@ def part_edit(id):
         if 'photo' in request.files:
             file = request.files['photo']
             if file and file.filename and allowed_file(file.filename):
-                ext = file.filename.rsplit('.', 1)[1].lower()
-                photo_filename = f"{part.part_number}.{ext}"
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename))
+                photo_filename = f"{part.part_number}.webp"
+                photo_bytes = process_image(file.stream)
+                photo_url = upload_photo(photo_bytes, photo_filename)
+                if photo_url:
+                    part.photo_url = photo_url
+                else:
+                    save_photo_local(photo_bytes, photo_filename, app.config['UPLOAD_FOLDER'])
                 part.photo_filename = photo_filename
 
         db.session.commit()
@@ -151,6 +161,7 @@ def part_edit(id):
 def part_delete(id):
     part = Part.query.get_or_404(id)
     if part.photo_filename:
+        delete_photo(part.photo_filename)
         photo_path = os.path.join(app.config['UPLOAD_FOLDER'], part.photo_filename)
         if os.path.exists(photo_path):
             os.remove(photo_path)
@@ -434,6 +445,20 @@ def optimize_move():
     new_bin = Bin.query.get(new_bin_id)
     flash(f'Moved "{part.name}" from {old_bin.name if old_bin else "nowhere"} to {new_bin.name}.', 'success')
     return redirect(url_for('optimize'))
+
+
+# --- Backup ---
+
+@app.route('/backup', methods=['POST'])
+def backup():
+    try:
+        db_url = app.config['SQLALCHEMY_DATABASE_URI']
+        sql_bytes = create_backup(db_url)
+        filename = send_backup_email(sql_bytes)
+        flash(f'Backup sent: {filename}', 'success')
+    except Exception as e:
+        flash(f'Backup failed: {e}', 'error')
+    return redirect(url_for('dashboard'))
 
 
 # --- Init DB ---

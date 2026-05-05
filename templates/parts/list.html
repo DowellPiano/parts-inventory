@@ -38,7 +38,9 @@
 <div class="gallery">
     {% for part in parts %}
     <a href="{{ url_for('part_detail', id=part.id) }}" class="gallery-item">
-        {% if part.photo_filename %}
+        {% if part.photo_url %}
+        <img src="{{ part.photo_url }}" alt="{{ part.name }}">
+        {% elif part.photo_filename %}
         <img src="{{ url_for('static', filename='uploads/' + part.photo_filename) }}" alt="{{ part.name }}">
         {% else %}
         <div class="placeholder-photo">No photo</div>
