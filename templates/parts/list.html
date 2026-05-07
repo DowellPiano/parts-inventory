@@ -11,12 +11,12 @@
         <input type="search" name="q" value="{{ query }}" placeholder="Search by name or part #...">
         <input type="submit" value="Search">
     </form>
-    <div>
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
         <a href="{{ url_for('part_new') }}" role="button">+ Add Part</a>
         {% if view == 'list' %}
-        <a href="{{ url_for('parts_list', q=query, category=category, view='gallery') }}">Gallery View</a>
+        <a href="{{ url_for('parts_list', q=query, category=category, view='gallery') }}" role="button" class="outline">Gallery</a>
         {% else %}
-        <a href="{{ url_for('parts_list', q=query, category=category, view='list') }}">List View</a>
+        <a href="{{ url_for('parts_list', q=query, category=category, view='list') }}" role="button" class="outline">List</a>
         {% endif %}
     </div>
 </div>
@@ -54,27 +54,29 @@
     {% endfor %}
 </div>
 {% else %}
-<table>
-    <thead>
-        <tr>
-            <th>Part #</th>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Location</th>
-            <th>Qty</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for part in parts %}
-        <tr>
-            <td><a href="{{ url_for('part_detail', id=part.id) }}">{{ part.part_number }}</a></td>
-            <td>{{ part.name }}</td>
-            <td>{{ part.category or '—' }}</td>
-            <td>{{ part.locations | map(attribute='name') | join(', ') or '—' }}</td>
-            <td {% if part.is_low_stock %}class="low-stock"{% endif %}>{{ part.quantity }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th>Part #</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Location</th>
+                <th>Qty</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for part in parts %}
+            <tr>
+                <td><a href="{{ url_for('part_detail', id=part.id) }}">{{ part.part_number }}</a></td>
+                <td>{{ part.name }}</td>
+                <td>{{ part.category or '—' }}</td>
+                <td>{{ part.locations | map(attribute='name') | join(', ') or '—' }}</td>
+                <td {% if part.is_low_stock %}class="low-stock"{% endif %}>{{ part.quantity }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endif %}
 {% endblock %}

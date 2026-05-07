@@ -1,20 +1,16 @@
+/* ── Flash messages ─────────────────────────────────── */
 .flash {
     padding: 0.75rem 1rem;
     margin-bottom: 1rem;
     border-radius: 4px;
 }
-.flash-success {
-    background: #d4edda;
-    color: #155724;
-}
-.flash-error {
-    background: #f8d7da;
-    color: #721c24;
-}
+.flash-success { background: #d4edda; color: #155724; }
+.flash-error   { background: #f8d7da; color: #721c24; }
 
+/* ── Gallery ─────────────────────────────────────────── */
 .gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 1rem;
 }
 .gallery-item {
@@ -26,35 +22,18 @@
 }
 .gallery-item img {
     width: 100%;
-    height: 150px;
+    height: 140px;
     object-fit: cover;
 }
-.gallery-item .info {
-    padding: 0.5rem;
-}
-.gallery-item .info h4 {
-    margin: 0;
-    font-size: 0.9rem;
-}
-.gallery-item .info small {
-    color: #666;
-}
+.gallery-item .info { padding: 0.5rem; }
+.gallery-item .info h4 { margin: 0; font-size: 0.9rem; }
+.gallery-item .info small { color: #666; }
 
-.low-stock {
-    color: #dc3545;
-    font-weight: bold;
-}
-
-.stock-adjust {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-}
-.stock-adjust input[type="number"] {
-    width: 80px;
-}
+/* ── Utility ─────────────────────────────────────────── */
+.low-stock { color: #dc3545; font-weight: bold; }
 
 .part-photo {
+    width: 100%;
     max-width: 300px;
     border-radius: 8px;
 }
@@ -68,4 +47,87 @@
     justify-content: center;
     color: #999;
     font-size: 0.8rem;
+    border-radius: 8px;
+}
+
+/* ── Stock adjust ────────────────────────────────────── */
+.stock-adjust {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+.stock-adjust input[type="number"] { width: 80px; }
+.stock-adjust input[type="text"]   { flex: 1 1 180px; min-width: 0; }
+.stock-adjust button               { white-space: nowrap; }
+
+/* ── Responsive tables ───────────────────────────────── */
+.table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
+}
+.table-scroll table { min-width: 480px; }
+
+/* ── Nav ─────────────────────────────────────────────── */
+nav.container {
+    flex-wrap: wrap;
+    gap: 0.25rem 0;
+}
+nav.container > ul:last-child {
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+}
+
+/* ── Mobile breakpoint ───────────────────────────────── */
+@media (max-width: 600px) {
+
+    /* Tighten container padding */
+    .container { padding-inline: 0.75rem; }
+
+    /* Stack Pico grids to single column */
+    .grid { grid-template-columns: 1fr !important; }
+
+    /* Full-width part photo */
+    .part-photo { max-width: 100%; }
+
+    /* Smaller gallery tiles */
+    .gallery { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+    .gallery-item img { height: 110px; }
+
+    /* Intake results: collapse wide table to card list */
+    .intake-results thead { display: none; }
+    .intake-results tr {
+        display: block;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    .intake-results td {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 0.2rem 0;
+        border: none;
+        gap: 0.5rem;
+    }
+    .intake-results td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        font-size: 0.8rem;
+        color: #666;
+        flex-shrink: 0;
+    }
+
+    /* Bin form slider label */
+    input[type="range"] { width: 100%; }
+
+    /* Buttons full width in action groups */
+    .action-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .action-row a, .action-row button { width: 100%; text-align: center; }
 }

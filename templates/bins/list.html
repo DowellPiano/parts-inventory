@@ -8,34 +8,35 @@
 
 <a href="{{ url_for('bin_new') }}" role="button">+ Add Bin</a>
 
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Shelf</th>
-            <th>Row</th>
-            <th>Position</th>
-            <th>Accessibility</th>
-            <th>Parts</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for bin in bins %}
-        <tr>
-            <td><a href="{{ url_for('bin_detail', id=bin.id) }}">{{ bin.name }}</a></td>
-            <td>{{ bin.shelf or '—' }}</td>
-            <td>{{ bin.row or '—' }}</td>
-            <td>{{ bin.position or '—' }}</td>
-            <td>{{ bin.accessibility }}/10</td>
-            <td>{{ bin.parts | length }}</td>
-            <td>
-                <a href="{{ url_for('bin_edit', id=bin.id) }}">Edit</a> |
-                <a href="{{ url_for('bin_label', id=bin.id) }}" target="_blank">Label</a> |
-                <a href="{{ url_for('bin_qr', id=bin.id) }}" target="_blank">QR</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Shelf</th>
+                <th>Row</th>
+                <th>Position</th>
+                <th>Access</th>
+                <th>Parts</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bin in bins %}
+            <tr>
+                <td><a href="{{ url_for('bin_detail', id=bin.id) }}">{{ bin.name }}</a></td>
+                <td>{{ bin.shelf or '—' }}</td>
+                <td>{{ bin.row or '—' }}</td>
+                <td>{{ bin.position or '—' }}</td>
+                <td>{{ bin.accessibility }}/10</td>
+                <td>{{ bin.parts | length }}</td>
+                <td style="white-space:nowrap;">
+                    <a href="{{ url_for('bin_edit', id=bin.id) }}">Edit</a> ·
+                    <a href="{{ url_for('bin_label', id=bin.id) }}" target="_blank">Label</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}

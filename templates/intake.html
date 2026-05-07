@@ -7,11 +7,11 @@
 <form method="post" enctype="multipart/form-data">
     <label>
         Upload PO Image
-        <input type="file" name="po_image" accept="image/*">
+        <input type="file" name="po_image" accept="image/*" capture="environment">
     </label>
     <details>
         <summary>Or paste PO text manually</summary>
-        <textarea name="po_text" rows="8" placeholder="Paste purchase order text here...&#10;Example:&#10;3x Roslau Wire 1-Lb Coils&#10;10x Center Pins 2oz&#10;5x English Key Bushing Cloth">{{ raw_text }}</textarea>
+        <textarea name="po_text" rows="6" placeholder="Paste purchase order text here...">{{ raw_text }}</textarea>
     </details>
     <button type="submit">Process Order</button>
 </form>
@@ -19,49 +19,54 @@
 {% if results %}
 <h2>Matched Items</h2>
 <form method="post" action="{{ url_for('intake_receive') }}">
-    <table>
-        <thead>
-            <tr>
-                <th>PO Line</th>
-                <th>Matched Part</th>
-                <th>Confidence</th>
-                <th>Location</th>
-                <th>Qty to Receive</th>
-                <th>Include</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in results %}
-            <tr>
-                <td><small>{{ r.line }}</small></td>
-                {% if r.match %}
-                <td>
-                    <a href="{{ url_for('part_detail', id=r.match.part.id) }}">{{ r.match.part.name }}</a>
-                    <br><small>{{ r.match.part.part_number }}</small>
-                </td>
-                <td>{{ r.match.confidence }}%</td>
-                <td>{{ r.match.part.location.name if r.match.part.location else 'Unassigned' }}</td>
-                <td>
-                    <input type="hidden" name="part_id" value="{{ r.match.part.id }}">
-                    <input type="number" name="quantity" value="{{ r.qty }}" min="0" style="width:70px;">
-                </td>
-                <td><input type="checkbox" checked></td>
-                {% else %}
-                <td colspan="4"><em>No match found</em></td>
-                <td>
-                    <a href="{{ url_for('part_new', name=r.line) }}" role="button" class="outline" style="padding:0.25rem 0.5rem; font-size:0.85rem;">Create Part</a>
-                </td>
-                {% endif %}
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-scroll">
+        <table class="intake-results">
+            <thead>
+                <tr>
+                    <th>PO Line</th>
+                    <th>Matched Part</th>
+                    <th>Confidence</th>
+                    <th>Location</th>
+                    <th>Qty</th>
+                    <th>Include</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in results %}
+                <tr>
+                    <td data-label="PO Line"><small>{{ r.line }}</small></td>
+                    {% if r.match %}
+                    <td data-label="Matched Part">
+                        <a href="{{ url_for('part_detail', id=r.match.part.id) }}">{{ r.match.part.name }}</a>
+                        <br><small>{{ r.match.part.part_number }}</small>
+                    </td>
+                    <td data-label="Confidence">{{ r.match.confidence }}%</td>
+                    <td data-label="Location">
+                        {{ r.match.part.locations | map(attribute='name') | join(', ') or 'Unassigned' }}
+                    </td>
+                    <td data-label="Qty">
+                        <input type="hidden" name="part_id" value="{{ r.match.part.id }}">
+                        <input type="number" name="quantity" value="{{ r.qty }}" min="0" style="width:70px;">
+                    </td>
+                    <td data-label="Include"><input type="checkbox" checked></td>
+                    {% else %}
+                    <td data-label="Matched Part" colspan="4"><em>No match found</em></td>
+                    <td data-label="">
+                        <a href="{{ url_for('part_new', name=r.line) }}" role="button" class="outline"
+                           style="padding:0.25rem 0.5rem; font-size:0.85rem; white-space:nowrap;">Create Part</a>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     <button type="submit">Receive Matched Items</button>
 </form>
 
 <details>
     <summary>Raw OCR Text</summary>
-    <pre>{{ raw_text }}</pre>
+    <pre style="overflow-x:auto; font-size:0.8rem;">{{ raw_text }}</pre>
 </details>
 {% endif %}
 {% endblock %}

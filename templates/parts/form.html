@@ -6,8 +6,10 @@
 <form method="post" enctype="multipart/form-data">
     <label>
         Name *
-        <input type="text" name="name" id="part-name" value="{{ part.name if part else request.args.get('name', '') }}" required>
+        <input type="text" name="name" id="part-name"
+               value="{{ part.name if part else request.args.get('name', '') }}" required>
     </label>
+
     <div id="duplicates" style="display:none; background:#fff3cd; padding:0.75rem; border-radius:4px; margin-bottom:1rem;">
         <strong>Similar parts found:</strong>
         <ul id="duplicate-list"></ul>
@@ -24,20 +26,18 @@
         <textarea name="description">{{ part.description if part else '' }}</textarea>
     </label>
 
-    <div class="grid">
-        <label>
-            Quantity
-            <input type="number" name="quantity" value="{{ part.quantity if part else 0 }}" min="0">
-        </label>
-        <label>
-            Reorder Threshold
-            <input type="number" name="min_threshold" value="{{ part.min_threshold if part else 0 }}" min="0">
-        </label>
-        <label>
-            Cost ($)
-            <input type="number" name="cost" value="{{ part.cost if part and part.cost else '' }}" step="0.01" min="0">
-        </label>
-    </div>
+    <label>
+        Quantity
+        <input type="number" name="quantity" value="{{ part.quantity if part else 0 }}" min="0">
+    </label>
+    <label>
+        Reorder Threshold
+        <input type="number" name="min_threshold" value="{{ part.min_threshold if part else 0 }}" min="0">
+    </label>
+    <label>
+        Cost ($)
+        <input type="number" name="cost" value="{{ part.cost if part and part.cost else '' }}" step="0.01" min="0">
+    </label>
 
     <label>
         Locations (Bins)
@@ -54,7 +54,7 @@
 
     <label>
         Photo
-        <input type="file" name="photo" accept="image/*">
+        <input type="file" name="photo" accept="image/*" capture="environment">
     </label>
     {% if part and part.photo_filename %}
     <small>Current photo: {{ part.photo_filename }}</small>

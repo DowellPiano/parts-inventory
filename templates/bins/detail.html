@@ -4,9 +4,7 @@
 
 <hgroup>
     <h1>{{ bin.name }}</h1>
-    {% if bin.full_label %}
-    <p>{{ bin.full_label }}</p>
-    {% endif %}
+    {% if bin.full_label %}<p>{{ bin.full_label }}</p>{% endif %}
 </hgroup>
 
 <div class="grid">
@@ -25,14 +23,14 @@
             <tr><th>Parts stored</th><td>{{ bin.parts | length }}</td></tr>
         </table>
 
-        <div style="margin-top: 1rem;">
+        <div class="action-row" style="margin-top:1rem;">
             <a href="{{ url_for('bin_edit', id=bin.id) }}" role="button" class="outline">Edit Bin</a>
             <a href="{{ url_for('bin_label', id=bin.id) }}" role="button" class="outline" target="_blank">Print Label</a>
         </div>
     </div>
 
-    <div style="text-align: center;">
-        <img src="{{ url_for('bin_qr', id=bin.id) }}" alt="QR Code" style="width: 150px;">
+    <div style="text-align:center;">
+        <img src="{{ url_for('bin_qr', id=bin.id) }}" alt="QR Code" style="width:150px; max-width:100%;">
         <br><small>Scan to open this page</small>
     </div>
 </div>
@@ -40,26 +38,28 @@
 <h2>Parts in this bin</h2>
 
 {% if bin.parts %}
-<table>
-    <thead>
-        <tr>
-            <th>Part #</th>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Qty</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for part in bin.parts | sort(attribute='name') %}
-        <tr>
-            <td><a href="{{ url_for('part_detail', id=part.id) }}">{{ part.part_number }}</a></td>
-            <td><a href="{{ url_for('part_detail', id=part.id) }}">{{ part.name }}</a></td>
-            <td>{{ part.category or '—' }}</td>
-            <td {% if part.is_low_stock %}class="low-stock"{% endif %}>{{ part.quantity }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th>Part #</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Qty</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for part in bin.parts | sort(attribute='name') %}
+            <tr>
+                <td><a href="{{ url_for('part_detail', id=part.id) }}">{{ part.part_number }}</a></td>
+                <td><a href="{{ url_for('part_detail', id=part.id) }}">{{ part.name }}</a></td>
+                <td>{{ part.category or '—' }}</td>
+                <td {% if part.is_low_stock %}class="low-stock"{% endif %}>{{ part.quantity }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% else %}
 <p>No parts assigned to this bin yet.</p>
 {% endif %}

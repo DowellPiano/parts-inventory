@@ -14,7 +14,7 @@
         <img src="{{ url_for('static', filename='uploads/' + part.photo_filename) }}"
              alt="{{ part.name }}" class="part-photo">
         {% else %}
-        <div class="placeholder-photo" style="width:300px; height:200px;">No photo</div>
+        <div class="placeholder-photo">No photo</div>
         {% endif %}
     </div>
     <div>
@@ -41,19 +41,19 @@
         <p>{{ part.description }}</p>
         {% endif %}
 
-        <div class="grid">
+        <div class="action-row" style="margin-top:1rem;">
             <a href="{{ url_for('part_edit', id=part.id) }}" role="button" class="outline">Edit</a>
             <a href="{{ url_for('part_label', id=part.id) }}" role="button" class="outline" target="_blank">Print Label</a>
             <form method="post" action="{{ url_for('part_delete', id=part.id) }}"
                   onsubmit="return confirm('Delete this part?')">
-                <button type="submit" class="secondary">Delete</button>
+                <button type="submit" class="secondary" style="width:100%;">Delete</button>
             </form>
         </div>
-
-        <h3>QR Code</h3>
-        <img src="{{ url_for('part_qr', id=part.id) }}" alt="QR Code" style="width:150px;">
     </div>
 </div>
+
+<h2>QR Code</h2>
+<img src="{{ url_for('part_qr', id=part.id) }}" alt="QR Code" style="width:150px;">
 
 <h2>Adjust Stock</h2>
 <form method="post" action="{{ url_for('part_adjust_stock', id=part.id) }}" class="stock-adjust">
@@ -64,19 +64,21 @@
 
 {% if part.stock_logs %}
 <h2>Stock History</h2>
-<table>
-    <thead>
-        <tr><th>Date</th><th>Change</th><th>Note</th></tr>
-    </thead>
-    <tbody>
-        {% for log in part.stock_logs %}
-        <tr>
-            <td>{{ log.created_at.strftime('%m/%d/%Y %H:%M') }}</td>
-            <td>{{ '%+d' | format(log.change) }}</td>
-            <td>{{ log.note }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="table-scroll">
+    <table>
+        <thead>
+            <tr><th>Date</th><th>Change</th><th>Note</th></tr>
+        </thead>
+        <tbody>
+            {% for log in part.stock_logs %}
+            <tr>
+                <td>{{ log.created_at.strftime('%m/%d/%Y %H:%M') }}</td>
+                <td>{{ '%+d' | format(log.change) }}</td>
+                <td>{{ log.note }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endif %}
 {% endblock %}
