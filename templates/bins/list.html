@@ -23,7 +23,7 @@
     <tbody>
         {% for bin in bins %}
         <tr>
-            <td>{{ bin.name }}</td>
+            <td><a href="{{ url_for('bin_detail', id=bin.id) }}">{{ bin.name }}</a></td>
             <td>{{ bin.shelf or '—' }}</td>
             <td>{{ bin.row or '—' }}</td>
             <td>{{ bin.position or '—' }}</td>

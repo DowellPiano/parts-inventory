@@ -246,10 +246,16 @@ def part_qr(id):
     return send_file(buf, mimetype='image/png', download_name=f'qr_{part.part_number}.png')
 
 
+@app.route('/bins/<int:id>')
+def bin_detail(id):
+    bin = Bin.query.get_or_404(id)
+    return render_template('bins/detail.html', bin=bin)
+
+
 @app.route('/bins/<int:id>/qr')
 def bin_qr(id):
     bin = Bin.query.get_or_404(id)
-    url = request.host_url.rstrip('/') + url_for('bins_list') + f'#{bin.id}'
+    url = request.host_url.rstrip('/') + url_for('bin_detail', id=bin.id)
     img = qrcode.make(url, box_size=8, border=2)
     buf = io.BytesIO()
     img.save(buf, format='PNG')
