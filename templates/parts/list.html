@@ -70,7 +70,7 @@
             <td><a href="{{ url_for('part_detail', id=part.id) }}">{{ part.part_number }}</a></td>
             <td>{{ part.name }}</td>
             <td>{{ part.category or '—' }}</td>
-            <td>{{ part.location.name if part.location else '—' }}</td>
+            <td>{{ part.locations | map(attribute='name') | join(', ') or '—' }}</td>
             <td {% if part.is_low_stock %}class="low-stock"{% endif %}>{{ part.quantity }}</td>
         </tr>
         {% endfor %}

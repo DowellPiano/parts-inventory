@@ -86,7 +86,7 @@
             {% if part %}
             <h1>{{ part.name }}</h1>
             <p class="part-number">{{ part.part_number }}</p>
-            <p>Bin: {{ part.location.name if part.location else 'Unassigned' }}</p>
+            <p>Bin: {{ part.locations | map(attribute='name') | join(', ') or 'Unassigned' }}</p>
             <p>Min: {{ part.min_threshold }}</p>
             {% elif bin %}
             <h1>{{ bin.name }}</h1>

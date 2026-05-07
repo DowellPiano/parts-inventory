@@ -3,6 +3,13 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
+# Association table for the many-to-many relationship between Parts and Bins
+part_bin = db.Table(
+    'part_bin',
+    db.Column('part_id', db.Integer, db.ForeignKey('part.id'), primary_key=True),
+    db.Column('bin_id', db.Integer, db.ForeignKey('bin.id'), primary_key=True),
+)
+
 
 class Part(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -15,11 +22,10 @@ class Part(db.Model):
     quantity = db.Column(db.Integer, default=0)
     min_threshold = db.Column(db.Integer, default=0)
     cost = db.Column(db.Float)
-    location_id = db.Column(db.Integer, db.ForeignKey('bin.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    location = db.relationship('Bin', backref='parts')
+    locations = db.relationship('Bin', secondary=part_bin, backref='parts')
     stock_logs = db.relationship('StockLog', backref='part', order_by='StockLog.created_at.desc()')
 
     @property

@@ -98,6 +98,9 @@ def part_new():
                 if not photo_url:
                     save_photo_local(photo_bytes, photo_filename, app.config['UPLOAD_FOLDER'])
 
+        location_ids = [int(i) for i in request.form.getlist('location_ids') if i]
+        selected_bins = Bin.query.filter(Bin.id.in_(location_ids)).all() if location_ids else []
+
         part = Part(
             part_number=part_number,
             name=name,
@@ -108,7 +111,7 @@ def part_new():
             quantity=int(request.form.get('quantity', 0)),
             min_threshold=int(request.form.get('min_threshold', 0)),
             cost=float(request.form['cost']) if request.form.get('cost') else None,
-            location_id=int(request.form['location_id']) if request.form.get('location_id') else None,
+            locations=selected_bins,
         )
         db.session.add(part)
         db.session.commit()
@@ -136,7 +139,9 @@ def part_edit(id):
         part.quantity = int(request.form.get('quantity', 0))
         part.min_threshold = int(request.form.get('min_threshold', 0))
         part.cost = float(request.form['cost']) if request.form.get('cost') else None
-        part.location_id = int(request.form['location_id']) if request.form.get('location_id') else None
+
+        location_ids = [int(i) for i in request.form.getlist('location_ids') if i]
+        part.locations = Bin.query.filter(Bin.id.in_(location_ids)).all() if location_ids else []
 
         if 'photo' in request.files:
             file = request.files['photo']
@@ -257,7 +262,8 @@ def bin_qr(id):
 @app.route('/parts/<int:id>/label')
 def part_label(id):
     part = Part.query.get_or_404(id)
-    return render_template('label.html', part=part, bin=part.location)
+    primary_bin = part.locations[0] if part.locations else None
+    return render_template('label.html', part=part, bin=primary_bin)
 
 
 @app.route('/bins/<int:id>/label')
@@ -389,7 +395,7 @@ def intake_receive():
 
 @app.route('/optimize')
 def optimize():
-    parts = Part.query.filter(Part.location_id.isnot(None)).all()
+    parts = Part.query.filter(Part.locations.any()).all()
 
     usage_counts = defaultdict(int)
     logs = db.session.query(
@@ -401,34 +407,32 @@ def optimize():
     suggestions = []
     for part in parts:
         usage = usage_counts.get(part.id, 0)
-        bin = part.location
-        if not bin:
-            continue
-        score = usage - bin.accessibility
-        if usage >= 3 and bin.accessibility <= 5:
-            better_bins = Bin.query.filter(
-                Bin.accessibility > bin.accessibility
-            ).order_by(Bin.accessibility.desc()).limit(3).all()
-            if better_bins:
-                suggestions.append({
-                    'part': part,
-                    'current_bin': bin,
-                    'usage': usage,
-                    'suggested_bins': better_bins,
-                    'priority': score,
-                })
-        elif usage <= 1 and bin.accessibility >= 8:
-            lower_bins = Bin.query.filter(
-                Bin.accessibility < bin.accessibility
-            ).order_by(Bin.accessibility.asc()).limit(3).all()
-            if lower_bins:
-                suggestions.append({
-                    'part': part,
-                    'current_bin': bin,
-                    'usage': usage,
-                    'suggested_bins': lower_bins,
-                    'priority': -score,
-                })
+        for bin in part.locations:
+            score = usage - bin.accessibility
+            if usage >= 3 and bin.accessibility <= 5:
+                better_bins = Bin.query.filter(
+                    Bin.accessibility > bin.accessibility
+                ).order_by(Bin.accessibility.desc()).limit(3).all()
+                if better_bins:
+                    suggestions.append({
+                        'part': part,
+                        'current_bin': bin,
+                        'usage': usage,
+                        'suggested_bins': better_bins,
+                        'priority': score,
+                    })
+            elif usage <= 1 and bin.accessibility >= 8:
+                lower_bins = Bin.query.filter(
+                    Bin.accessibility < bin.accessibility
+                ).order_by(Bin.accessibility.asc()).limit(3).all()
+                if lower_bins:
+                    suggestions.append({
+                        'part': part,
+                        'current_bin': bin,
+                        'usage': usage,
+                        'suggested_bins': lower_bins,
+                        'priority': -score,
+                    })
 
     suggestions.sort(key=lambda s: s['priority'], reverse=True)
     return render_template('optimize.html', suggestions=suggestions)
@@ -437,12 +441,16 @@ def optimize():
 @app.route('/optimize/move', methods=['POST'])
 def optimize_move():
     part_id = int(request.form['part_id'])
+    old_bin_id = int(request.form['old_bin_id'])
     new_bin_id = int(request.form['new_bin_id'])
     part = Part.query.get_or_404(part_id)
-    old_bin = part.location
-    part.location_id = new_bin_id
+    old_bin = Bin.query.get(old_bin_id)
+    new_bin = Bin.query.get_or_404(new_bin_id)
+    if old_bin and old_bin in part.locations:
+        part.locations.remove(old_bin)
+    if new_bin not in part.locations:
+        part.locations.append(new_bin)
     db.session.commit()
-    new_bin = Bin.query.get(new_bin_id)
     flash(f'Moved "{part.name}" from {old_bin.name if old_bin else "nowhere"} to {new_bin.name}.', 'success')
     return redirect(url_for('optimize'))
 

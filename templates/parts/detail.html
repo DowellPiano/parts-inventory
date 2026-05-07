@@ -20,7 +20,14 @@
     <div>
         <table>
             <tr><th>Category</th><td>{{ part.category or '—' }}</td></tr>
-            <tr><th>Location</th><td>{{ part.location.name if part.location else '—' }}</td></tr>
+            <tr>
+                <th>Location{{ 's' if part.locations | length > 1 }}</th>
+                <td>
+                    {% if part.locations %}
+                        {{ part.locations | map(attribute='name') | join(', ') }}
+                    {% else %}—{% endif %}
+                </td>
+            </tr>
             <tr><th>Quantity</th>
                 <td {% if part.is_low_stock %}class="low-stock"{% endif %}>
                     {{ part.quantity }} (min: {{ part.min_threshold }})

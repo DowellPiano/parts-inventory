@@ -40,16 +40,16 @@
     </div>
 
     <label>
-        Location (Bin)
-        <select name="location_id">
-            <option value="">— No bin assigned —</option>
+        Locations (Bins)
+        <select name="location_ids" multiple size="5">
             {% for bin in bins %}
             <option value="{{ bin.id }}"
-                    {% if part and part.location_id == bin.id %}selected{% endif %}>
-                {{ bin.name }} ({{ bin.full_label }})
+                    {% if part and bin in part.locations %}selected{% endif %}>
+                {{ bin.name }}{% if bin.full_label %} — {{ bin.full_label }}{% endif %}
             </option>
             {% endfor %}
         </select>
+        <small>Hold Ctrl / Cmd to select multiple bins.</small>
     </label>
 
     <label>
