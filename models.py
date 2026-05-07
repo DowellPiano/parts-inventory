@@ -30,7 +30,7 @@ class Part(db.Model):
 
     @property
     def is_low_stock(self):
-        return self.quantity <= self.min_threshold
+        return self.min_threshold > 0 and self.quantity <= self.min_threshold
 
 
 class Bin(db.Model):

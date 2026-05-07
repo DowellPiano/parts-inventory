@@ -42,7 +42,7 @@ def generate_part_number(name, category):
 
 @app.route('/')
 def dashboard():
-    low_stock = Part.query.filter(Part.quantity <= Part.min_threshold).all()
+    low_stock = Part.query.filter(Part.min_threshold > 0, Part.quantity <= Part.min_threshold).all()
     recent_logs = StockLog.query.order_by(StockLog.created_at.desc()).limit(10).all()
     total_parts = Part.query.count()
     return render_template('dashboard.html',
@@ -282,7 +282,7 @@ def bin_label(id):
 
 @app.route('/reorder')
 def reorder():
-    low_stock = Part.query.filter(Part.quantity <= Part.min_threshold).order_by(Part.category).all()
+    low_stock = Part.query.filter(Part.min_threshold > 0, Part.quantity <= Part.min_threshold).order_by(Part.category).all()
     by_category = {}
     for part in low_stock:
         cat = part.category or 'Uncategorized'
