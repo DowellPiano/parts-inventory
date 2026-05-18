@@ -3,6 +3,7 @@ import os
 import re
 import sqlite3
 import uuid
+from datetime import datetime
 from difflib import SequenceMatcher
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
 from models import db, Part, Bin
@@ -10,7 +11,7 @@ import qrcode
 import pytesseract
 from PIL import Image
 from storage import process_image, save_photo_local, delete_photo_local
-from backup import create_backup, send_backup_email
+from backup import create_backup
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-in-production')
@@ -484,11 +485,17 @@ def backup():
     try:
         db_url = app.config['SQLALCHEMY_DATABASE_URI']
         sql_bytes = create_backup(db_url)
-        filename = send_backup_email(sql_bytes)
-        flash(f'Backup sent: {filename}', 'success')
+        timestamp = datetime.now().strftime('%Y-%m-%d_%H%M')
+        filename = f"parts_inventory_backup_{timestamp}.sql"
+        return send_file(
+            io.BytesIO(sql_bytes),
+            mimetype='application/sql',
+            as_attachment=True,
+            download_name=filename,
+        )
     except Exception as e:
         flash(f'Backup failed: {e}', 'error')
-    return redirect(url_for('dashboard'))
+        return redirect(url_for('dashboard'))
 
 
 # --- Init DB ---
