@@ -10,7 +10,7 @@ Organize hundreds of small parts for a piano repair shop. Track where every part
 - **Parts** — name, description, auto-generated part number, category, photo, quantity on hand, cost
 - **Bins/Locations** — shelf, row, bin number, QR code for each bin
 - **Suppliers** — vendor name, contact, lead time
-- **Usage history** — track how often each part is used (drives optimization)
+- **Use count** — track how often each part is used (drives optimization)
 
 ---
 
@@ -30,7 +30,7 @@ Organize hundreds of small parts for a piano repair shop. Track where every part
 ### Stock & Reorder
 - Track quantity on hand, set minimum threshold per part
 - Reorder dashboard — everything below threshold, grouped by supplier
-- Log usage (decrement) and receiving (increment) with timestamps
+- Adjust quantity on hand directly; downward adjustments increase the part's use count
 
 ### Purchase Order Intake
 - Photograph/upload a purchase order
@@ -38,7 +38,7 @@ Organize hundreds of small parts for a piano repair shop. Track where every part
 - Tell the stocker exactly which bin each part goes to
 
 ### Optimize Layout
-- Track usage frequency per part
+- Track use count per part
 - Suggest optimal placement: high-use parts on lower, easy-access shelves; low-use parts in less accessible areas
 - Generate a reorganization plan when triggered
 

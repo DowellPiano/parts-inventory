@@ -8,9 +8,7 @@
 
 <div class="grid">
     <div>
-        {% if part.photo_url %}
-        <img src="{{ part.photo_url }}" alt="{{ part.name }}" class="part-photo">
-        {% elif part.photo_filename %}
+        {% if part.photo_filename %}
         <img src="{{ url_for('static', filename='uploads/' + part.photo_filename) }}"
              alt="{{ part.name }}" class="part-photo">
         {% else %}
@@ -33,6 +31,7 @@
                     {{ part.quantity }} (min: {{ part.min_threshold }})
                 </td>
             </tr>
+            <tr><th>Uses</th><td>{{ part.usage_count or 0 }}</td></tr>
             <tr><th>Cost</th><td>{{ '$%.2f' | format(part.cost) if part.cost else '—' }}</td></tr>
             <tr><th>Added</th><td>{{ part.created_at.strftime('%Y-%m-%d') }}</td></tr>
         </table>
@@ -58,27 +57,6 @@
 <h2>Adjust Stock</h2>
 <form method="post" action="{{ url_for('part_adjust_stock', id=part.id) }}" class="stock-adjust">
     <input type="number" name="change" value="1" required>
-    <input type="text" name="note" placeholder="Note (optional)">
     <button type="submit">Adjust</button>
 </form>
-
-{% if part.stock_logs %}
-<h2>Stock History</h2>
-<div class="table-scroll">
-    <table>
-        <thead>
-            <tr><th>Date</th><th>Change</th><th>Note</th></tr>
-        </thead>
-        <tbody>
-            {% for log in part.stock_logs %}
-            <tr>
-                <td>{{ log.created_at.strftime('%m/%d/%Y %H:%M') }}</td>
-                <td>{{ '%+d' | format(log.change) }}</td>
-                <td>{{ log.note }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endif %}
 {% endblock %}

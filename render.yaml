@@ -5,14 +5,8 @@ services:
     buildCommand: "./render-build.sh"
     startCommand: "gunicorn app:app"
     envVars:
-      - key: DATABASE_URL
-        sync: false
       - key: SECRET_KEY
         generateValue: true
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_KEY
-        sync: false
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASS

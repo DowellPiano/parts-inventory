@@ -1,30 +1,69 @@
 import io
 import os
 import re
+import sqlite3
 import uuid
-from collections import defaultdict
 from difflib import SequenceMatcher
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
-from werkzeug.utils import secure_filename
-from sqlalchemy import func
-from models import db, Part, Bin, StockLog
+from models import db, Part, Bin
 import qrcode
 import pytesseract
 from PIL import Image
-from storage import process_image, upload_photo, delete_photo, save_photo_local
+from storage import process_image, save_photo_local, delete_photo_local
 from backup import create_backup, send_backup_email
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-in-production')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
-    'DATABASE_URL', 'sqlite:///parts_inventory.db'
-)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///parts_inventory.db'
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 
 db.init_app(app)
+
+
+def ensure_sqlite_schema():
+    """Keep existing SQLite installs compatible with lightweight model changes."""
+    database_uri = app.config['SQLALCHEMY_DATABASE_URI']
+    if not database_uri.startswith('sqlite:///'):
+        return
+
+    db_path = database_uri.replace('sqlite:///', '')
+    if not os.path.isabs(db_path):
+        db_path = os.path.join(app.instance_path, db_path)
+    if not os.path.exists(db_path):
+        return
+
+    with sqlite3.connect(db_path) as con:
+        columns = [row[1] for row in con.execute("PRAGMA table_info(part)")]
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS part_bin (
+                part_id INTEGER NOT NULL REFERENCES part(id),
+                bin_id INTEGER NOT NULL REFERENCES bin(id),
+                PRIMARY KEY (part_id, bin_id)
+            )
+        """)
+        if 'location_id' in columns:
+            con.execute("""
+                INSERT OR IGNORE INTO part_bin (part_id, bin_id)
+                SELECT id, location_id FROM part
+                WHERE location_id IS NOT NULL
+            """)
+        if 'usage_count' not in columns:
+            con.execute("ALTER TABLE part ADD COLUMN usage_count INTEGER DEFAULT 0")
+        stock_log_exists = con.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='stock_log'"
+        ).fetchone()
+        if stock_log_exists:
+            con.execute("""
+                UPDATE part
+                SET usage_count = COALESCE((
+                    SELECT SUM(ABS(change))
+                    FROM stock_log
+                    WHERE stock_log.part_id = part.id AND change < 0
+                ), usage_count, 0)
+            """)
 
 
 def allowed_file(filename):
@@ -43,11 +82,9 @@ def generate_part_number(name, category):
 @app.route('/')
 def dashboard():
     low_stock = Part.query.filter(Part.min_threshold > 0, Part.quantity <= Part.min_threshold).all()
-    recent_logs = StockLog.query.order_by(StockLog.created_at.desc()).limit(10).all()
     total_parts = Part.query.count()
     return render_template('dashboard.html',
                            low_stock=low_stock,
-                           recent_logs=recent_logs,
                            total_parts=total_parts)
 
 
@@ -88,15 +125,12 @@ def part_new():
         part_number = generate_part_number(name, category)
 
         photo_filename = None
-        photo_url = None
         if 'photo' in request.files:
             file = request.files['photo']
             if file and file.filename and allowed_file(file.filename):
                 photo_filename = f"{part_number}.webp"
                 photo_bytes = process_image(file.stream)
-                photo_url = upload_photo(photo_bytes, photo_filename)
-                if not photo_url:
-                    save_photo_local(photo_bytes, photo_filename, app.config['UPLOAD_FOLDER'])
+                save_photo_local(photo_bytes, photo_filename, app.config['UPLOAD_FOLDER'])
 
         location_ids = [int(i) for i in request.form.getlist('location_ids') if i]
         selected_bins = Bin.query.filter(Bin.id.in_(location_ids)).all() if location_ids else []
@@ -107,7 +141,6 @@ def part_new():
             description=request.form.get('description', ''),
             category=category,
             photo_filename=photo_filename,
-            photo_url=photo_url,
             quantity=int(request.form.get('quantity', 0)),
             min_threshold=int(request.form.get('min_threshold', 0)),
             cost=float(request.form['cost']) if request.form.get('cost') else None,
@@ -148,11 +181,7 @@ def part_edit(id):
             if file and file.filename and allowed_file(file.filename):
                 photo_filename = f"{part.part_number}.webp"
                 photo_bytes = process_image(file.stream)
-                photo_url = upload_photo(photo_bytes, photo_filename)
-                if photo_url:
-                    part.photo_url = photo_url
-                else:
-                    save_photo_local(photo_bytes, photo_filename, app.config['UPLOAD_FOLDER'])
+                save_photo_local(photo_bytes, photo_filename, app.config['UPLOAD_FOLDER'])
                 part.photo_filename = photo_filename
 
         db.session.commit()
@@ -166,10 +195,7 @@ def part_edit(id):
 def part_delete(id):
     part = Part.query.get_or_404(id)
     if part.photo_filename:
-        delete_photo(part.photo_filename)
-        photo_path = os.path.join(app.config['UPLOAD_FOLDER'], part.photo_filename)
-        if os.path.exists(photo_path):
-            os.remove(photo_path)
+        delete_photo_local(part.photo_filename, app.config['UPLOAD_FOLDER'])
     db.session.delete(part)
     db.session.commit()
     flash('Part deleted.', 'success')
@@ -180,11 +206,10 @@ def part_delete(id):
 def part_adjust_stock(id):
     part = Part.query.get_or_404(id)
     change = int(request.form['change'])
-    note = request.form.get('note', '')
 
     part.quantity += change
-    log = StockLog(part_id=part.id, change=change, note=note)
-    db.session.add(log)
+    if change < 0:
+        part.usage_count = (part.usage_count or 0) + abs(change)
     db.session.commit()
 
     flash(f'Stock adjusted by {change:+d}.', 'success')
@@ -388,8 +413,6 @@ def intake_receive():
         if part:
             change = int(qty)
             part.quantity += change
-            log = StockLog(part_id=part.id, change=change, note="Received from purchase order")
-            db.session.add(log)
             received += 1
 
     db.session.commit()
@@ -403,16 +426,9 @@ def intake_receive():
 def optimize():
     parts = Part.query.filter(Part.locations.any()).all()
 
-    usage_counts = defaultdict(int)
-    logs = db.session.query(
-        StockLog.part_id, func.count(StockLog.id)
-    ).filter(StockLog.change < 0).group_by(StockLog.part_id).all()
-    for part_id, count in logs:
-        usage_counts[part_id] = count
-
     suggestions = []
     for part in parts:
-        usage = usage_counts.get(part.id, 0)
+        usage = part.usage_count or 0
         for bin in part.locations:
             score = usage - bin.accessibility
             if usage >= 3 and bin.accessibility <= 5:
@@ -479,6 +495,7 @@ def backup():
 
 with app.app_context():
     db.create_all()
+    ensure_sqlite_schema()
 
 
 if __name__ == '__main__':

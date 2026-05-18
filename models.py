@@ -18,15 +18,14 @@ class Part(db.Model):
     description = db.Column(db.Text)
     category = db.Column(db.String(100))
     photo_filename = db.Column(db.String(255))
-    photo_url = db.Column(db.String(500))
     quantity = db.Column(db.Integer, default=0)
     min_threshold = db.Column(db.Integer, default=0)
+    usage_count = db.Column(db.Integer, default=0)
     cost = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     locations = db.relationship('Bin', secondary=part_bin, backref='parts')
-    stock_logs = db.relationship('StockLog', backref='part', order_by='StockLog.created_at.desc()')
 
     @property
     def is_low_stock(self):
@@ -46,11 +45,3 @@ class Bin(db.Model):
     def full_label(self):
         parts = [self.shelf, self.row, self.position]
         return '-'.join(p for p in parts if p)
-
-
-class StockLog(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    part_id = db.Column(db.Integer, db.ForeignKey('part.id'), nullable=False)
-    change = db.Column(db.Integer, nullable=False)  # positive=received, negative=used
-    note = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)

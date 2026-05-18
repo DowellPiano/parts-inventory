@@ -2,11 +2,11 @@
 {% block title %}Optimize Layout — Parts Inventory{% endblock %}
 {% block content %}
 <h1>Layout Optimization</h1>
-<p>Suggestions based on usage frequency vs. bin accessibility. High-use parts should be in easy-to-reach bins; rarely-used parts can go higher or further back.</p>
+<p>Suggestions based on use count vs. bin accessibility. High-use parts should be in easy-to-reach bins; rarely-used parts can go higher or further back.</p>
 
 {% if not suggestions %}
 <article>
-    <p>No optimization suggestions right now. As usage data accumulates, suggestions will appear here.</p>
+    <p>No optimization suggestions right now. Suggestions will appear after parts are used or moved.</p>
 </article>
 {% else %}
 <p><strong>{{ suggestions | length }}</strong> suggested moves:</p>

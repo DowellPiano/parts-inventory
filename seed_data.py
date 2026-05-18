@@ -1,10 +1,11 @@
 """Seed the database with sample parts from Schaff Piano Supply categories."""
 from app import app, db
-from models import Part, Bin, StockLog
+from models import Part, Bin
 import random
 import re
 import uuid
-from datetime import datetime, timedelta
+
+
 def gen_part_number(name, category):
     cat_code = (category or 'GEN')[:3].upper()
     name_code = re.sub(r'[^A-Z0-9]', '', name.upper())[:4]
@@ -107,23 +108,11 @@ def seed():
                 category=p["category"],
                 quantity=quantity,
                 min_threshold=p["min_threshold"],
+                usage_count=random.randint(0, 8),
                 cost=p["cost"],
-                location_id=random.choice(bin_objects).id,
             )
+            part.locations.append(random.choice(bin_objects))
             db.session.add(part)
-            db.session.flush()
-
-            # Add some stock history
-            for _ in range(random.randint(1, 5)):
-                days_ago = random.randint(1, 90)
-                change = random.choice([-1, -1, -2, 3, 5, 10])
-                log = StockLog(
-                    part_id=part.id,
-                    change=change,
-                    note=random.choice(["Used in repair", "Restocked", "Customer job", "Inventory count", "Received from Schaff"]),
-                    created_at=datetime.utcnow() - timedelta(days=days_ago),
-                )
-                db.session.add(log)
 
         db.session.commit()
         print(f"Seeded {len(PARTS)} parts across {len(BINS)} bins.")

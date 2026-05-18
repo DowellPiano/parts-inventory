@@ -1,20 +1,10 @@
-"""Photo processing and Supabase Storage integration."""
+"""Photo processing and local photo storage."""
 import io
 import os
 from PIL import Image
 
 MAX_DIMENSION = 600
 WEBP_QUALITY = 75
-BUCKET_NAME = 'part-photos'
-
-
-def _get_supabase():
-    url = os.environ.get('SUPABASE_URL', '')
-    key = os.environ.get('SUPABASE_KEY', '')
-    if not url or not key:
-        return None
-    from supabase import create_client
-    return create_client(url, key)
 
 
 def process_image(file_stream):
@@ -34,31 +24,16 @@ def process_image(file_stream):
     return buf.getvalue()
 
 
-def upload_photo(photo_bytes, filename):
-    """Upload to Supabase Storage. Returns the public URL or None if not configured."""
-    sb = _get_supabase()
-    if not sb:
-        return None
-
-    path = f"parts/{filename}"
-    sb.storage.from_(BUCKET_NAME).upload(
-        path, photo_bytes,
-        file_options={"content-type": "image/webp", "upsert": "true"}
-    )
-    return sb.storage.from_(BUCKET_NAME).get_public_url(path)
-
-
-def delete_photo(filename):
-    """Delete from Supabase Storage."""
-    sb = _get_supabase()
-    if not sb:
-        return
-    path = f"parts/{filename}"
-    sb.storage.from_(BUCKET_NAME).remove([path])
-
-
 def save_photo_local(photo_bytes, filename, upload_folder):
-    """Fallback: save to local filesystem if Supabase isn't configured."""
+    """Save processed photo bytes under the local upload folder."""
+    os.makedirs(upload_folder, exist_ok=True)
     filepath = os.path.join(upload_folder, filename)
     with open(filepath, 'wb') as f:
         f.write(photo_bytes)
+
+
+def delete_photo_local(filename, upload_folder):
+    """Delete a locally stored photo if it exists."""
+    filepath = os.path.join(upload_folder, filename)
+    if os.path.exists(filepath):
+        os.remove(filepath)
