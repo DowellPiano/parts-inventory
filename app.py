@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime
 from difflib import SequenceMatcher
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
+from dotenv import load_dotenv
 from models import db, Part, Bin
 import qrcode
 import pytesseract
@@ -13,11 +14,24 @@ from PIL import Image
 from storage import process_image, save_photo_local, delete_photo_local
 from backup import create_backup, restore_backup
 
+load_dotenv()
+
 app = Flask(__name__)
+os.makedirs(app.instance_path, exist_ok=True)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-in-production')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///parts_inventory.db'
-app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
+database_path = os.environ.get('INVENTORY_DATABASE_PATH', 'parts_inventory.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{database_path}"
+upload_folder = os.environ.get('INVENTORY_UPLOAD_FOLDER')
+if upload_folder:
+    app.config['UPLOAD_FOLDER'] = (
+        upload_folder if os.path.isabs(upload_folder)
+        else os.path.join(app.root_path, upload_folder)
+    )
+else:
+    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = int(
+    os.environ.get('INVENTORY_MAX_UPLOAD_MB', 16)
+) * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 
@@ -526,4 +540,8 @@ with app.app_context():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='localhost', port=5001)
+    app.run(
+        debug=os.environ.get('FLASK_DEBUG', '0') == '1',
+        host=os.environ.get('FLASK_RUN_HOST', 'localhost'),
+        port=int(os.environ.get('FLASK_RUN_PORT', 5001)),
+    )
