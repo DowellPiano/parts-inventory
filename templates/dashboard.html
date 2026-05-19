@@ -17,6 +17,11 @@
         <form method="post" action="{{ url_for('backup') }}">
             <button type="submit" class="outline" style="margin-top:0.5rem;">Download Backup</button>
         </form>
+        <form method="post" action="{{ url_for('restore') }}" enctype="multipart/form-data"
+              onsubmit="return confirm('Restore this backup? This will replace the current inventory database.')">
+            <input type="file" name="backup_file" accept=".sql" required>
+            <button type="submit" class="secondary" style="margin-top:0.5rem;">Restore Backup</button>
+        </form>
     </article>
 </div>
 

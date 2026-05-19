@@ -11,7 +11,7 @@ import qrcode
 import pytesseract
 from PIL import Image
 from storage import process_image, save_photo_local, delete_photo_local
-from backup import create_backup
+from backup import create_backup, restore_backup
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-in-production')
@@ -496,6 +496,26 @@ def backup():
     except Exception as e:
         flash(f'Backup failed: {e}', 'error')
         return redirect(url_for('dashboard'))
+
+
+@app.route('/restore', methods=['POST'])
+def restore():
+    file = request.files.get('backup_file')
+    if not file or not file.filename:
+        flash('Choose a backup file to restore.', 'error')
+        return redirect(url_for('dashboard'))
+
+    try:
+        sql_bytes = file.read()
+        db_url = app.config['SQLALCHEMY_DATABASE_URI']
+        db.session.remove()
+        db.engine.dispose()
+        restore_backup(db_url, sql_bytes)
+        ensure_sqlite_schema()
+        flash('Backup restored.', 'success')
+    except Exception as e:
+        flash(f'Restore failed: {e}', 'error')
+    return redirect(url_for('dashboard'))
 
 
 # --- Init DB ---
