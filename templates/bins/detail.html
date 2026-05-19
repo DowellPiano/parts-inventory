@@ -35,9 +35,39 @@
     </div>
 </div>
 
-<h2>Parts in this bin</h2>
+<div class="section-heading-row">
+    <h2>Parts in this bin</h2>
+    {% if bin.parts %}
+    <div class="view-toggle">
+        {% if view == 'gallery' %}
+        <a href="{{ url_for('bin_detail', id=bin.id, view='list') }}" role="button" class="outline">List</a>
+        {% else %}
+        <a href="{{ url_for('bin_detail', id=bin.id, view='gallery') }}" role="button" class="outline">Gallery</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
 
 {% if bin.parts %}
+{% if view == 'gallery' %}
+<div class="gallery bin-gallery">
+    {% for part in bin.parts | sort(attribute='name') %}
+    <a href="{{ url_for('part_detail', id=part.id) }}" class="gallery-item">
+        {% if part.photo_filename %}
+        <img src="{{ url_for('static', filename='uploads/' + part.photo_filename) }}" alt="{{ part.name }}">
+        {% else %}
+        <div class="placeholder-photo">No photo</div>
+        {% endif %}
+        <div class="info">
+            <h4>{{ part.name }}</h4>
+            <small>{{ part.part_number }}</small><br>
+            <small>{{ part.category or 'Uncategorized' }}</small><br>
+            <small {% if part.is_low_stock %}class="low-stock"{% endif %}>Qty: {{ part.quantity }}</small>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
 <div class="table-scroll">
     <table>
         <thead>
@@ -60,6 +90,7 @@
         </tbody>
     </table>
 </div>
+{% endif %}
 {% else %}
 <p>No parts assigned to this bin yet.</p>
 {% endif %}

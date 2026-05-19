@@ -220,7 +220,11 @@ def part_delete(id):
 @app.route('/parts/<int:id>/adjust', methods=['POST'])
 def part_adjust_stock(id):
     part = Part.query.get_or_404(id)
-    change = int(request.form['change'])
+    if request.form.get('new_quantity') is not None:
+        new_quantity = max(0, int(request.form['new_quantity']))
+        change = new_quantity - part.quantity
+    else:
+        change = int(request.form['change'])
 
     part.quantity += change
     if change < 0:
@@ -289,7 +293,8 @@ def part_qr(id):
 @app.route('/bins/<int:id>')
 def bin_detail(id):
     bin = Bin.query.get_or_404(id)
-    return render_template('bins/detail.html', bin=bin)
+    view = request.args.get('view', 'list')
+    return render_template('bins/detail.html', bin=bin, view=view)
 
 
 @app.route('/bins/<int:id>/qr')

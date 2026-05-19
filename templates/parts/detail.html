@@ -55,8 +55,40 @@
 <img src="{{ url_for('part_qr', id=part.id) }}" alt="QR Code" style="width:150px;">
 
 <h2>Adjust Stock</h2>
-<form method="post" action="{{ url_for('part_adjust_stock', id=part.id) }}" class="stock-adjust">
-    <input type="number" name="change" value="1" required>
-    <button type="submit">Adjust</button>
+<form method="post" action="{{ url_for('part_adjust_stock', id=part.id) }}" class="stock-adjust stock-setter">
+    <input type="hidden" name="new_quantity" id="new-quantity" value="{{ part.quantity }}">
+    <div class="quantity-stepper" data-current-quantity="{{ part.quantity }}">
+        <button type="button" class="outline quantity-button" id="decrease-quantity" aria-label="Decrease quantity">&minus;</button>
+        <output class="quantity-preview" for="new-quantity">
+            <span id="preview-quantity">{{ part.quantity }}</span>
+            <small>will be in stock after save</small>
+        </output>
+        <button type="button" class="outline quantity-button" id="increase-quantity" aria-label="Increase quantity">+</button>
+    </div>
+    <button type="submit">Save new amount</button>
 </form>
+
+<script>
+const quantityInput = document.getElementById('new-quantity');
+const previewQuantity = document.getElementById('preview-quantity');
+const decreaseButton = document.getElementById('decrease-quantity');
+const increaseButton = document.getElementById('increase-quantity');
+
+function setQuantity(nextQuantity) {
+    const quantity = Math.max(0, nextQuantity);
+    quantityInput.value = quantity;
+    previewQuantity.textContent = quantity;
+    decreaseButton.disabled = quantity === 0;
+}
+
+decreaseButton.addEventListener('click', () => {
+    setQuantity(parseInt(quantityInput.value, 10) - 1);
+});
+
+increaseButton.addEventListener('click', () => {
+    setQuantity(parseInt(quantityInput.value, 10) + 1);
+});
+
+setQuantity(parseInt(quantityInput.value, 10));
+</script>
 {% endblock %}

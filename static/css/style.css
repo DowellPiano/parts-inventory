@@ -28,6 +28,17 @@
 .gallery-item .info { padding: 0.5rem; }
 .gallery-item .info h4 { margin: 0; font-size: 0.9rem; }
 .gallery-item .info small { color: #666; }
+.bin-gallery { margin-bottom: 1rem; }
+
+.section-heading-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+.section-heading-row h2 { margin: 0; }
+.view-toggle { flex-shrink: 0; }
 
 /* ── Utility ─────────────────────────────────────────── */
 .low-stock { color: #dc3545; font-weight: bold; }
@@ -60,6 +71,39 @@
 .stock-adjust input[type="number"] { width: 80px; }
 .stock-adjust input[type="text"]   { flex: 1 1 180px; min-width: 0; }
 .stock-adjust button               { white-space: nowrap; }
+.stock-setter {
+    align-items: stretch;
+}
+.quantity-stepper {
+    display: flex;
+    align-items: stretch;
+    gap: 0.5rem;
+}
+.quantity-button {
+    width: 3rem;
+    min-height: 3rem;
+    padding: 0;
+    font-size: 1.4rem;
+}
+.quantity-preview {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 11rem;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    text-align: center;
+}
+.quantity-preview span {
+    line-height: 1;
+    font-size: 1.7rem;
+    font-weight: 700;
+}
+.quantity-preview small {
+    margin-top: 0.25rem;
+    color: #666;
+}
 
 /* ── Responsive tables ───────────────────────────────── */
 .table-scroll {
@@ -94,6 +138,12 @@ nav.container > ul:last-child {
     /* Smaller gallery tiles */
     .gallery { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
     .gallery-item img { height: 110px; }
+    .section-heading-row {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .view-toggle a { width: 100%; text-align: center; }
 
     /* Intake results: collapse wide table to card list */
     .intake-results thead { display: none; }
@@ -130,4 +180,15 @@ nav.container > ul:last-child {
         gap: 0.5rem;
     }
     .action-row a, .action-row button { width: 100%; text-align: center; }
+    .stock-setter,
+    .quantity-stepper {
+        width: 100%;
+    }
+    .quantity-preview {
+        flex: 1;
+        min-width: 0;
+    }
+    .stock-setter > button {
+        width: 100%;
+    }
 }
