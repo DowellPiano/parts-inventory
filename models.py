@@ -32,6 +32,30 @@ class Part(db.Model):
         return self.min_threshold > 0 and self.quantity <= self.min_threshold
 
 
+class SearchFeedback(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    query_text = db.Column(db.Text, nullable=False)
+    normalized_query = db.Column(db.String(500), nullable=False, index=True)
+    candidate_part_ids = db.Column(db.Text, nullable=False)
+    selected_part_id = db.Column(db.Integer, db.ForeignKey('part.id'), nullable=False)
+    scorer_metadata = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    selected_part = db.relationship('Part')
+
+
+class PartEmbedding(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    part_id = db.Column(db.Integer, db.ForeignKey('part.id'), nullable=False, unique=True)
+    provider = db.Column(db.String(100), nullable=False)
+    model = db.Column(db.String(200), nullable=False)
+    content_hash = db.Column(db.String(64), nullable=False)
+    vector_json = db.Column(db.Text, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    part = db.relationship('Part')
+
+
 class Bin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)

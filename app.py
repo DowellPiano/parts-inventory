@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import re
 import sqlite3
@@ -7,12 +8,18 @@ from datetime import datetime
 from difflib import SequenceMatcher
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
 from dotenv import load_dotenv
-from models import db, Part, Bin
+from models import db, Part, Bin, SearchFeedback, PartEmbedding
 import qrcode
 import pytesseract
 from PIL import Image
 from storage import process_image, save_photo_local, delete_photo_local
 from backup import create_backup, restore_backup
+from search import (
+    encode_candidate_ids,
+    encode_scorer_metadata,
+    normalize_query,
+    search_parts,
+)
 
 load_dotenv()
 
@@ -111,24 +118,68 @@ def parts_list():
     category = request.args.get('category', '')
     view = request.args.get('view', 'list')
 
-    parts = Part.query
-    if query:
-        parts = parts.filter(
-            Part.name.ilike(f'%{query}%') | Part.part_number.ilike(f'%{query}%')
-        )
+    parts_query = Part.query
     if category:
-        parts = parts.filter(Part.category == category)
+        parts_query = parts_query.filter(Part.category == category)
 
-    parts = parts.order_by(Part.name).all()
+    parts = parts_query.order_by(Part.name).all()
     categories = db.session.query(Part.category).distinct().all()
     categories = [c[0] for c in categories if c[0]]
+    search_results = []
+    candidate_ids = '[]'
+    scorer_metadata = '{}'
+
+    if query:
+        feedback_rows = SearchFeedback.query.order_by(
+            SearchFeedback.created_at.desc()
+        ).limit(200).all()
+        embeddings = PartEmbedding.query.all()
+        search_results = search_parts(query, parts, feedback_rows, embeddings)
+        parts = [result.part for result in search_results]
+        candidate_ids = encode_candidate_ids(search_results)
+        scorer_metadata = encode_scorer_metadata(search_results)
 
     return render_template('parts/list.html',
                            parts=parts,
+                           search_results=search_results,
+                           candidate_ids=candidate_ids,
+                           scorer_metadata=scorer_metadata,
                            query=query,
                            category=category,
                            categories=categories,
                            view=view)
+
+
+@app.route('/search-feedback', methods=['POST'])
+def search_feedback():
+    query = request.form.get('query', '').strip()
+    part_id = int(request.form['part_id'])
+    Part.query.get_or_404(part_id)
+    candidate_ids = request.form.get('candidate_ids', '[]')
+    scorer_metadata = request.form.get('scorer_metadata', '{}')
+
+    try:
+        json.loads(candidate_ids)
+        json.loads(scorer_metadata)
+    except json.JSONDecodeError:
+        candidate_ids = '[]'
+        scorer_metadata = '{}'
+
+    feedback = SearchFeedback(
+        query_text=query,
+        normalized_query=normalize_query(query),
+        candidate_part_ids=candidate_ids,
+        selected_part_id=part_id,
+        scorer_metadata=scorer_metadata,
+    )
+    db.session.add(feedback)
+    db.session.commit()
+    flash('Search feedback saved.', 'success')
+    return redirect(url_for(
+        'parts_list',
+        q=query,
+        category=request.form.get('category', ''),
+    ))
 
 
 @app.route('/parts/new', methods=['GET', 'POST'])
@@ -530,6 +581,7 @@ def restore():
         db.session.remove()
         db.engine.dispose()
         restore_backup(db_url, sql_bytes)
+        db.create_all()
         ensure_sqlite_schema()
         flash('Backup restored.', 'success')
     except Exception as e:

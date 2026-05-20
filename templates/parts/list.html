@@ -3,12 +3,18 @@
 {% block content %}
 <hgroup>
     <h1>Parts</h1>
-    <p>{{ parts | length }} parts found</p>
+    <p>
+        {% if query %}
+        {{ search_results | length }} possible matches for "{{ query }}"
+        {% else %}
+        {{ parts | length }} parts found
+        {% endif %}
+    </p>
 </hgroup>
 
 <div class="grid">
     <form method="get" role="search">
-        <input type="search" name="q" value="{{ query }}" placeholder="Search by name or part #...">
+        <input type="search" name="q" value="{{ query }}" placeholder="Describe the part, location, or part #...">
         <input type="submit" value="Search">
     </form>
     <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
@@ -34,7 +40,46 @@
 </details>
 {% endif %}
 
-{% if view == 'gallery' %}
+{% if query %}
+{% if search_results %}
+<div class="search-results">
+    {% for result in search_results %}
+    {% set part = result.part %}
+    <article class="search-result-card">
+        <div class="search-result-main">
+            {% if part.photo_filename %}
+            <img src="{{ url_for('static', filename='uploads/' + part.photo_filename) }}" alt="{{ part.name }}">
+            {% else %}
+            <div class="placeholder-photo">No photo</div>
+            {% endif %}
+            <div>
+                <h3><a href="{{ url_for('part_detail', id=part.id) }}">{{ part.name }}</a></h3>
+                <p>
+                    <strong>{{ part.part_number }}</strong>
+                    {% if part.category %} · {{ part.category }}{% endif %}
+                </p>
+                <p>{{ part.locations | map(attribute='name') | join(', ') or 'No bin assigned' }}</p>
+                <p {% if part.is_low_stock %}class="low-stock"{% endif %}>Qty: {{ part.quantity }}</p>
+                <small>{{ result.why }} · Score {{ result.score }}</small>
+            </div>
+        </div>
+        <form method="post" action="{{ url_for('search_feedback') }}">
+            <input type="hidden" name="query" value="{{ query }}">
+            <input type="hidden" name="category" value="{{ category }}">
+            <input type="hidden" name="part_id" value="{{ part.id }}">
+            <input type="hidden" name="candidate_ids" value="{{ candidate_ids }}">
+            <input type="hidden" name="scorer_metadata" value="{{ scorer_metadata }}">
+            <button type="submit" class="outline">Correct match</button>
+        </form>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<article>
+    <p>No close matches found. Try a part number, material, category, or bin name.</p>
+</article>
+{% endif %}
+{% elif view == 'gallery' %}
 <div class="gallery">
     {% for part in parts %}
     <a href="{{ url_for('part_detail', id=part.id) }}" class="gallery-item">
