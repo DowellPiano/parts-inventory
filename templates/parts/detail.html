@@ -9,7 +9,7 @@
 <div class="grid">
     <div>
         {% if part.photo_filename %}
-        <img src="{{ url_for('static', filename='uploads/' + part.photo_filename) }}"
+        <img src="{{ url_for('uploaded_file', filename=part.photo_filename) }}"
              alt="{{ part.name }}" class="part-photo">
         {% else %}
         <div class="placeholder-photo">No photo</div>

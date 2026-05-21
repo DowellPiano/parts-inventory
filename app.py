@@ -6,7 +6,7 @@ import sqlite3
 import uuid
 from datetime import datetime
 from difflib import SequenceMatcher
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, send_from_directory, jsonify
 from dotenv import load_dotenv
 from models import db, Part, Bin, SearchFeedback, PartEmbedding
 import qrcode
@@ -224,6 +224,11 @@ def part_new():
 def part_detail(id):
     part = Part.query.get_or_404(id)
     return render_template('parts/detail.html', part=part)
+
+
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
 @app.route('/parts/<int:id>/edit', methods=['GET', 'POST'])

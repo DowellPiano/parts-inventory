@@ -54,7 +54,7 @@
     {% for part in bin.parts | sort(attribute='name') %}
     <a href="{{ url_for('part_detail', id=part.id) }}" class="gallery-item">
         {% if part.photo_filename %}
-        <img src="{{ url_for('static', filename='uploads/' + part.photo_filename) }}" alt="{{ part.name }}">
+        <img src="{{ url_for('uploaded_file', filename=part.photo_filename) }}" alt="{{ part.name }}">
         {% else %}
         <div class="placeholder-photo">No photo</div>
         {% endif %}
